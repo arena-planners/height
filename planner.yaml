@@ -23,6 +23,7 @@ observations:
       type: sensor_msgs/LaserScan
       params:
         topic: scan
+        canonical_beams: 180
 
     pedestrians:
       type: arena_people_msgs/Pedestrians

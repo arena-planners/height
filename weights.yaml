@@ -2,4 +2,4 @@ files:
   - repo: arena-rosnav/height
     filename: height_policy.pt
     dest: model/height_policy.pt
-    sha256: <compute-on-stage>
+    sha256: 0687b60d8d4034274dc9810eeb80a311fbbd8b0ce5c3693b70dbea56adfdb473

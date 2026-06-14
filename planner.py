@@ -40,6 +40,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 _MODEL_DIR = pathlib.Path(__file__).parent / "model"
 
 _LOOKAHEAD: float = 2.0
+_GOAL_MAX_DIST: float = 4.0
 _PAD_VALUE: float = 15.0
 _DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -185,13 +186,20 @@ def step(features: dict) -> list[float]:
         return [0.0, 0.0]
     gx, gy = target
 
-    # robot_node: [px, py, gx, gy, theta] world frame, shape (1, 5).
-    robot_node = np.array([[px, py, gx, gy, theta]], dtype=np.float32)
+    # The 'absolute' checkpoint trained with px, py, gx, gy in a +/-4 m box around the origin, so
+    # recentre on the robot and clamp the goal offset to stay in-distribution (a far goal spins it).
+    gdx, gdy = gx - px, gy - py
+    gdist = math.hypot(gdx, gdy)
+    if gdist > _GOAL_MAX_DIST:
+        gdx, gdy = gdx * _GOAL_MAX_DIST / gdist, gdy * _GOAL_MAX_DIST / gdist
+    robot_node = np.array([[0.0, 0.0, gdx, gdy, theta]], dtype=np.float32)
     temporal_edges = np.array([[vx, vy]], dtype=np.float32)
 
     # spatial_edges: (max_human_num, 4) = [rel_px, rel_py, hvx, hvy] robot frame, pad 15, sorted by dist.
     spatial = np.full((max(1, _max_human_num), 4), _PAD_VALUE, dtype=np.float32)
-    peds = features.get("pedestrians") or []
+    peds = features.get("pedestrians")
+    if peds is None:
+        peds = []
     visible_count = 0
     for i, ped in enumerate(peds[:_max_human_num]):
         rel_x, rel_y = _world_to_robot(float(ped[1]) - px, float(ped[2]) - py, theta)

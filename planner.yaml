@@ -28,7 +28,7 @@ observations:
     pedestrians:
       type: arena_people_msgs/Pedestrians
       params:
-        topic: pedestrians
+        topic: arena_peds
 
     goal_pose:
       type: geometry_msgs/PoseStamped

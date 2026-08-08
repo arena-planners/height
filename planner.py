@@ -30,7 +30,6 @@ import sys
 
 import numpy as np
 import torch
-from arena_planners.geometry import lookahead_on_path
 from arena_planners.sdk import load_manifest, main_loop
 
 # Vendored upstream code lives flat under this directory; expose it on sys.path so the
@@ -39,10 +38,20 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 _MODEL_DIR = pathlib.Path(__file__).parent / "model"
 
-_LOOKAHEAD: float = 2.0
 _GOAL_MAX_DIST: float = 4.0
 _PAD_VALUE: float = 15.0
-_DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def _pick_device() -> torch.device:
+    """CUDA only if it can actually launch a kernel; this torch build predates newer GPUs."""
+    if torch.cuda.is_available():
+        try:
+            (torch.zeros(1, device="cuda") + 1).cpu()
+            return torch.device("cuda")
+        except RuntimeError:
+            pass
+    return torch.device("cpu")
+
+
+_DEVICE = _pick_device()
 
 # Discrete action table from CrowdSim3DTB.set_action_space (config.env.action_space == 'discrete').
 # index -> [delta_v (m/s), delta_w (rad/s)].
@@ -175,12 +184,9 @@ def step(features: dict) -> list[float]:
     px, py, theta = float(robot_pose[0]), float(robot_pose[1]), float(robot_pose[2])
     vx, vy = float(robot_state[2]), float(robot_state[3])
 
-    global_plan = features.get("global_plan")
     goal_pose = features.get("goal_pose")
     target: tuple[float, float] | None = None
-    if global_plan is not None and len(global_plan) > 0:
-        target = lookahead_on_path(global_plan, robot_pose, lookahead=_LOOKAHEAD)
-    if target is None and goal_pose is not None:
+    if goal_pose is not None:
         target = (float(goal_pose[0]), float(goal_pose[1]))
     if target is None:
         return [0.0, 0.0]

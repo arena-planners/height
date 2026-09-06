@@ -1,7 +1,6 @@
 action_type: differential_drive
 sensor_needs: [laserscan]
 controls_orientation: false
-obs_policy: latest_only
 
 depends:
   global_plan: true

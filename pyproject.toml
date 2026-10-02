@@ -2,11 +2,11 @@
 name = "arena_planners_height"
 version = "0.0.0"
 description = "HEIGHT (selfAttn_merge_SRNN_lidar) crowd navigation wrapper for arena_planners bridge."
-requires-python = ">=3.8,<3.9"
+requires-python = ">=3.10,<3.12"
 dependencies = [
     "arena_planners",
-    "torch==1.12.1",
-    "torchvision==0.13.1",
+    "torch>=2.14,<2.15",
+    "torchvision>=0.29,<0.30",
     "numpy<=1.23.1",
     "gym==0.15.7",
     "scipy>=1.7",
